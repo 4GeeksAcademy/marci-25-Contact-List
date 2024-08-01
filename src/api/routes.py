@@ -19,15 +19,17 @@ def login():
     data = request.json
     username = request.json.get("username", None)
     password = request.json.get("password", None)
-    if username != "test" or password != "test":
-    #  TODO: realizar la logica para verificar en nuestra db
-        response_body['message'] = 'Bad username or password'
+    user = db.session.execute(db.select(Users).where(Users.email == email, Users.password == password, Users.is_active == True)).scalar()
+    if not user != "test" or password != "test":
+     user = db.session.execute(db.select(Users).where(Users.email == email, Users.password == password, Users.is_active == True)).scalar()
+    if not user:
+        response_body['message'] = 'Authorization denied. email, password incorrect or user inactive'
         return response_body, 401
-    access_token = create_access_token(identity={'username':username, 'user_id': 30})
-    response_body['message'] = 'user logged'
+    access_token = create_access_token(identity={'email': email, 'user_id': user.id, 'is_admin': user.is_admin})
+    response_body['results'] = user.serialize()
+    response_body['message'] = 'User logged'
     response_body['access_token'] = access_token
-    # return jsonify(access_token=access_token)
-    return response_body, 200
+    return response_body, 201
 
 @api.route("/protected", methods=["GET"])
 @jwt_required()
